@@ -1,0 +1,70 @@
+from ultralytics import YOLO
+import cv2
+from datetime import datetime, timezone 
+import time
+from db import log_event
+
+model = YOLO('yolov8n.pt')
+
+
+def run_vision():
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Error when opening the webcam.")
+        return
+    
+    # flag for pausing by QR Code
+    pause = False
+    # Counter for processing each 3 frames
+    frame_count = 0
+    qr_detector = cv2.QRCodeDetector()
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("Failure in capturing frame.")
+            break
+        
+        frame_count += 1
+        if frame_count % 3 == 0:
+            # the _ are for ignoring the points and straight_qrcode that are returned by the function
+            data, _, _ = qr_detector.detectAndDecode(frame)
+            if data:
+                if data == "STOP_FALCON" and not pause:
+                    pause = True
+                    log_event("pause", {"reason": "QR detected"})
+                    print("Pause detected by QRCode")
+                elif data == "START_FALCON" and pause:
+                    pause = False
+                    log_event("resume", {"reason": "QR detected"})
+                    print("Resumed by QRCode")
+            if not pause:
+                results = model.track(frame, classes=0, conf=0.5)
+                if results:
+                    persons_count = len(results[0].boxes)
+                    if persons_count > 0:
+                        details = {"persons_count": persons_count}
+                        if len(results[0].boxes) > 0:
+                            bbox = results[0].boxes[0].xyxy.cpu().numpy()[0]  # Acessa as coordenadas como [x1, y1, x2, y2]
+                            x1, y1, x2, y2 = map(int, bbox)  # Desempacota corretamente
+                            roi = frame[y1:y2, x1:x2]
+                            mean_color = cv2.mean(roi)[:3]  # Média BGR
+                            details["dominant_color"] = f"RGB({int(mean_color[2])},{int(mean_color[1])},{int(mean_color[0])})"
+                        log_event("detection", details)
+                        print(f"{persons_count} persons were detected.")
+                    annotated_frame = results[0].plot() if results else frame
+                    cv2.imshow('Falcon Vision AI', annotated_frame)
+                else:
+                    cv2.imshow('Falcon Vision AI', frame)
+
+            frame_count %= 3
+    
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    print("Test Standalone initiated. Show QRCode 'Stop Falcon' to stop")
+    run_vision()
