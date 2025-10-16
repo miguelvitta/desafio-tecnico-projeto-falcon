@@ -5,7 +5,7 @@ import os
 
 DB_PATH = 'data/events.db'
 
-# First, the function to initialize the sqlite db     
+# First, the function to initialize the sqlite db
 def init_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     try:
@@ -21,7 +21,7 @@ def init_db():
             ''')
             conn.commit()
     except sqlite3.Error as e:
-        print(f"Erro ao inicializar DB: {e}")
+        print(f"Error initializing DB: {e}")
 
 def log_event(event_type, details=None):
     try:
@@ -35,7 +35,7 @@ def log_event(event_type, details=None):
             ''', (event_type, timestamp, details_str))
             conn.commit()
     except sqlite3.Error as e:
-        print(f"Erro ao logar evento: {e}")
+        print(f"Error logging event: {e}")
 
 def get_events():
     try:
@@ -44,16 +44,16 @@ def get_events():
             cursor.execute('SELECT * FROM events ORDER BY timestamp DESC')
             return cursor.fetchall()
     except sqlite3.Error as e:
-        print(f"Erro ao consultar eventos: {e}")
+        print(f"Error querying events: {e}")
         return []
-    
+
 # Test for the functions above
 if __name__ == "__main__":
     init_db()
     log_event("detection", {"persons_count": 2, "color": "blue", "action": "walking"})
     log_event("pause", {"reason": "QR detected"})
     events = get_events()
-    print("Eventos logados:")
+    print("EEvents logged:")
     for event in events:
         print(event)
-    print("Teste concluido.")
+    print("Test concluded.")
