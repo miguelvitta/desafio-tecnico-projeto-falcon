@@ -18,12 +18,27 @@ The workflow is straightforward: `app.py` runs a loop that continuously grabs fr
 
 ---
 
-## Features
+## Challenge Requirements Fulfilled
 
-* **Real-Time Person Detection**: Utilizes the YOLOv8 model to detect and track people in a live webcam stream.
-* **Event Logging**: All key events, such as application start/stop and person detections, are logged to a local SQLite database for persistence.
-* **QR Code Control**: The camera feed can be stopped by showing a specific QR code to the camera.
-* **Interactive Dashboard**: A web interface built with Streamlit displays the live camera feed and an analytics dashboard with charts and filterable data.
+This project successfully implements the core functional and technical requirements outlined in the "🧠 Desafio Técnico – FALCON Vision AI" document.
+
+### Functional Requirements
+
+* **Real-Time Person Detection & Tracking**: The application uses a YOLO model to detect and track people from a live webcam feed.
+* **Event Timestamping**: It logs the timestamp for when individuals are detected.
+* **Visual Characteristic Collection**: The system captures the dominant clothing color of detected individuals.
+* **Interactive UI**: A Streamlit dashboard provides a real-time video feed and data visualizations.
+* **QR Code Control**: Detection is stopped when a specific QR code is shown to the camera.
+* **Data Visualization Dashboard**: The UI includes a dashboard with Plotly and Altair charts to filter and visualize statistics, avoiding basic chart types like pie charts as requested.
+
+### Technical Requirements
+
+* **Language**: The application is written entirely in **Python**.
+* **AI Frameworks**: It utilizes **ultralytics** for the YOLO model and **opencv** for image processing.
+* **UI Framework**: The user interface is built with **Streamlit**.
+* **Local Storage**: Event data is stored locally in a **SQLite** database.
+
+*Note: The integration with an LLM for a chat-based query interface is a planned feature for future development.*
 
 ---
 
@@ -37,6 +52,7 @@ The workflow is straightforward: `app.py` runs a loop that continuously grabs fr
     * `pandas`
     * `plotly`
     * `altair`
+    * `qrcode` (for generating QR codes)
 
 ---
 
@@ -47,8 +63,8 @@ The workflow is straightforward: `app.py` runs a loop that continuously grabs fr
 First, clone this repository to your local machine.
 
 ```bash
-git clone [https://github.com/your-username/your-repository-name.git](https://github.com/your-username/your-repository-name.git)
-cd your-repository-name
+git clone [hhttps://github.com/miguelvitta/desafio-tecnico-projeto-falcon.git](https://github.com/miguelvitta/desafio-tecnico-projeto-falcon.git)
+cd desafio-tecnico-projeto-falcon
 ```
 
 ### 2. Create and Activate a Virtual Environment
@@ -88,3 +104,48 @@ Once the setup is complete, you can run the application with a single command fr
 streamlit run app.py
 ```
 The application will automatically open in a new tab in your default web browser.
+
+---
+
+## Utilities
+The project includes utility scripts for maintenance and setup.
+
+### Resetting the Database
+If you need to wipe all logged data and start fresh, you can create and run a reset_db.py script with the following content:
+
+```Python
+
+from db import init_db
+# This drops the events table and creates a new one.
+init_db(recreate=True)
+print("Database has been reset successfully.")
+```
+Run it from your terminal: 
+```Python
+python reset_db.py
+```
+
+### Generating QR Codes
+To generate the necessary QR codes for controlling the application, you can create and run a generate_qr.py script:
+
+```Python
+
+import qrcode
+
+def create_qr(data, filename):
+    img = qrcode.make(data)
+    img.save(filename)
+    print(f"QR Code saved as {filename}")
+
+# Create the QR code to stop the vision processing
+create_qr("STOP_FALCON", "qr_stop_falcon.png")
+
+# Create the QR code to resume the vision processing
+create_qr("START_FALCON", "qr_start_falcon.png")
+```
+
+Run it from your terminal: 
+```Python
+python generate_qr.py.
+```
+This will save the .png files in your project directory.
