@@ -2,3 +2,4 @@ ultralytics
 opencv-python
 streamlit
 qrcode[pil]
+sqlalchemy
