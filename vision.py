@@ -9,6 +9,7 @@ def process_frame(frame, pause=False):
     persons_count = 0
     details = {}
 
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     data, _, _ = qr_detector.detectAndDecode(frame)
     if data and data.strip() == "STOP_FALCON" and not pause:
         pause = True
@@ -31,7 +32,6 @@ def process_frame(frame, pause=False):
                     roi = frame[y1:y2, x1:x2]
                     mean_color = cv2.mean(roi)[:3]
                     details["dominant_color"] = f"RGB({int(mean_color[2])}, {int(mean_color[1])}, {int(mean_color[0])})"
-                log_event("detection", details)
                 print(f"Detected {persons_count} person(s).")
                 annotated_frame = results[0].plot() if results else frame
             else:
@@ -59,7 +59,7 @@ def run_vision():
 
         frame_count += 1
         if frame_count % 3 == 0:
-            annotated_frame, _, _ = process_frame(frame, pause)
+            annotated_frame, _, _, pause = process_frame(frame, pause)
             cv2.imshow('Falcon Vision AI', annotated_frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):

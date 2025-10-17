@@ -13,6 +13,9 @@ if 'pause' not in st.session_state:
     st.session_state['persons_count'] = 0
     st.session_state['running'] = False
 
+if 'cap' not in st.session_state:
+    st.session_state['cap'] = None
+
 frame_placeholder = st.empty()
 
 # Control Buttons
@@ -23,12 +26,19 @@ if st.button("Resume") and st.session_state['pause']:
     st.session_state['pause'] = False
     log_event("resume", {"reason": "UI button"})
     st.success("Process was resumed")
+    # Reset cap if closed
+    if st.session_state['cap'] is not None and not st.session_state['cap'].isOpened():
+        st.session_state['cap'] = None
 if st.button("Stop"):
     st.session_state['running'] = False
     st.session_state['pause'] = True
+    # Release the camera when stopping
+    if st.session_state['cap'] is not None:
+        st.session_state['cap'].release()
+        st.session_state['cap'] = None
 
 # Vision Loop
-cap = None
+cap = st.session_state['cap']
 try:
     if st.session_state['running'] and not st.session_state['pause']:
         if cap is None or not cap.isOpened():
@@ -37,6 +47,7 @@ try:
                 st.error("Error when opening the webcam.")
                 st.session_state['running'] = False
                 raise Exception("Webcam not available.")
+            st.session_state['cap'] = cap
         
         ret, frame = cap.read()
         if ret:
@@ -46,16 +57,14 @@ try:
             if details:
                 log_event("detection", details)
             frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
-            frame_placeholder.image(frame_rgb, channels="RGB", use_container_width=True)
+            frame_placeholder.image(frame_rgb, channels="RGB", width='stretch')
+            time.sleep(0.05)
             st.rerun()
         else:
             st.error("Failure when capturing frame.")
             st.session_state['running'] = False
 except Exception as e:
     st.error(f"Error when processing: {e}")
-finally:
-    if cap is not None:
-        cap.release()
 
 st.header("Dashboard")
 try:
