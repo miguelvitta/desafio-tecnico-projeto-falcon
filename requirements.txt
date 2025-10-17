@@ -3,3 +3,5 @@ opencv-python
 streamlit
 qrcode[pil]
 sqlalchemy
+plotly
+altair

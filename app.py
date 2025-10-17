@@ -4,6 +4,9 @@ from vision import process_frame, model
 from db import log_event
 import pandas as pd
 import time
+import plotly.express as px
+import json
+import altair as alt
 
 st.title("Falcon Vision AI Dashboard")
 
@@ -80,6 +83,23 @@ try:
             filtered_df = df[df['event_type'] == selected_event]
         st.dataframe(filtered_df)
         st.metric("People Detected", st.session_state['persons_count'])
+
+        detection_df = filtered_df[filtered_df['event_type'] == 'detection'].copy()
+        detection_df['timestamp'] = pd.to_datetime(detection_df['timestamp'])
+        detection_df['persons_count'] = detection_df['details'].apply(lambda d: json.loads(d).get('persons_count', 0) if d else 0)
+        fig = px.line(detection_df, x='timestamp', y='persons_count', title='Pessoas Detectadas ao Longo do Tempo', hover_data=['details'])
+        st.plotly_chart(fig)
+
+        detection_df = filtered_df[filtered_df['event_type'] == 'detection'].copy()
+        detection_df['dominant_color'] = detection_df['details'].apply(lambda d: json.loads(d).get('dominant_color', 'Unknown') if d else 'Unknown')
+        chart = alt.Chart(detection_df).mark_bar().encode(
+            x='dominant_color:N',
+            y='count():Q',
+            column='event_type:N',
+            tooltip=['timestamp:T', 'details:N']
+        ).interactive()
+        st.altair_chart(chart)
+
 except pd.io.sql.DatabaseError:
     st.error("Error in connecting with the database. Verify data/events.db")
 except Exception as e:
